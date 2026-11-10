@@ -6,6 +6,7 @@ import {
   mdiHomeEdit,
   mdiPencil,
   mdiPlus,
+  mdiContentDuplicate,
 } from "@mdi/js";
 import type { PropertyValues } from "lit";
 import { LitElement, css, html, nothing } from "lit";
@@ -38,6 +39,7 @@ import type { LovelaceRawConfig } from "../../../../data/lovelace/config/types";
 import {
   isStrategyDashboard,
   saveConfig,
+  fetchConfig,
 } from "../../../../data/lovelace/config/types";
 import { fetchResources } from "../../../../data/lovelace/resource";
 import type {
@@ -317,6 +319,13 @@ export class HaConfigLovelaceDashboards extends LitElement {
                         "ui.panel.config.lovelace.dashboards.picker.edit"
                       ),
                       action: () => this._handleEdit(dashboard),
+                    },
+                    {
+                      path: mdiContentDuplicate,
+                      label: this.hass.localize(
+                        "ui.panel.config.lovelace.dashboards.picker.duplicate"
+                      ),
+                      action: () => this._handleDuplicate(dashboard),
                     },
                     {
                       label: this.hass.localize(
@@ -599,6 +608,35 @@ export class HaConfigLovelaceDashboards extends LitElement {
       return;
     }
     this._deleteDashboard(dashboard);
+  };
+
+  private _handleDuplicate = async (item: DataTableItem) => {
+    try {
+      const config = await fetchConfig(
+        this.hass.connection,
+        item.url_path,
+        false
+      );
+
+      const title = this.hass.localize(
+        "ui.panel.config.lovelace.dashboards.picker.duplicate_title",
+        { title: item.title }
+      );
+
+      this._openDetailDialog(undefined, undefined, config, {
+        title,
+        icon: item.icon,
+      });
+    } catch {
+      // show the error message
+      showAlertDialog(this, {
+        text: this.hass.localize(
+          "ui.panel.config.lovelace.dashboard.duplicate_failed"
+        ),
+      });
+    }
+    // 2. on error: show a message and stop
+    // 3. open the dialog
   };
 
   private async _addDashboard() {
